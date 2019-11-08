@@ -2,24 +2,30 @@
   (:require
    [reagent.core :as reagent]
    [re-frame.core :as re-frame]
+   [re-posh.core :as re-posh]
    [rp1.events :as events]
    [rp1.routes :as routes]
    [rp1.views :as views]
-   [rp1.config :as config]
-   ))
-
+   [rp1.config :as config]))
 
 (defn dev-setup []
   (when config/debug?
     (println "dev mode")))
 
-(defn ^:dev/after-load mount-root []
-  (re-frame/clear-subscription-cache!)
-  (reagent/render [views/main-panel]
-                  (.getElementById js/document "app")))
+(defn mount-app-element []
+  (reagent/render-component [views/main-panel]
+                            (.getElementById js/document "app")))
 
 (defn init []
-  (routes/app-routes)
-  (re-frame/dispatch-sync [::events/initialize-db])
-  (dev-setup)
-  (mount-root))
+  (re-posh/dispatch-sync [::events/initialize-db])
+  (mount-app-element))
+
+;; specify reload hook with ^;after-load metadata
+(defn ^:after-load on-reload []
+  (mount-app-element))
+
+(defonce initialize-block
+  (do
+    (re-posh/dispatch-sync [::events/initialize-db])
+    (mount-app-element)
+    true))
